@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import AnonymousUser
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 from .models import User
 from .serializers import (
@@ -25,6 +27,30 @@ class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
 
+    @swagger_auto_schema(
+        operation_description="Register a new user",
+        responses={
+            201: openapi.Response(
+                description="User registered successfully",
+                examples={
+                    "application/json": {
+                        "user": {
+                            "id": 1,
+                            "email": "student@example.com",
+                            "full_name": "John Doe",
+                            "role": "student"
+                        },
+                        "tokens": {
+                            "refresh": "refresh_token_here",
+                            "access": "access_token_here"
+                        },
+                        "message": "User registered successfully"
+                    }
+                }
+            ),
+            400: "Bad Request - Validation errors"
+        }
+    )
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -49,6 +75,31 @@ class UserLoginView(APIView):
     """
     permission_classes = [permissions.AllowAny]
 
+    @swagger_auto_schema(
+        operation_description="Login with email and password",
+        request_body=UserLoginSerializer,
+        responses={
+            200: openapi.Response(
+                description="Login successful",
+                examples={
+                    "application/json": {
+                        "user": {
+                            "id": 1,
+                            "email": "student@example.com",
+                            "full_name": "John Doe",
+                            "role": "student"
+                        },
+                        "tokens": {
+                            "refresh": "refresh_token_here",
+                            "access": "access_token_here"
+                        },
+                        "message": "Login successful"
+                    }
+                }
+            ),
+            400: "Bad Request - Invalid credentials"
+        }
+    )
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)

@@ -8,6 +8,8 @@ django = "*"
 djangorestframework = "*"
 djangorestframework-simplejwt = "*"
 psycopg2-binary = "*"
+drf-yasg = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 
