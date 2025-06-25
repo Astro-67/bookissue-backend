@@ -10,15 +10,20 @@ class TicketSerializer(serializers.ModelSerializer):
     created_by = UserListSerializer(read_only=True)
     assigned_to = UserListSerializer(read_only=True)
     assigned_to_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    comments_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
         fields = [
             'id', 'title', 'description', 'status',
             'created_by', 'assigned_to', 'assigned_to_id',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at', 'comments_count'
         ]
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+
+    def get_comments_count(self, obj):
+        """Get the number of comments for this ticket"""
+        return obj.comments.count()
 
     def validate_assigned_to_id(self, value):
         """Validate that assigned user can manage tickets"""
@@ -98,9 +103,14 @@ class TicketListSerializer(serializers.ModelSerializer):
     """
     created_by = UserListSerializer(read_only=True)
     assigned_to = UserListSerializer(read_only=True)
+    comments_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
         fields = [
-            'id', 'title', 'status', 'created_by', 'assigned_to', 'created_at'
+            'id', 'title', 'status', 'created_by', 'assigned_to', 'created_at', 'comments_count'
         ]
+
+    def get_comments_count(self, obj):
+        """Get the number of comments for this ticket"""
+        return obj.comments.count()
