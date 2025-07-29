@@ -11,6 +11,7 @@ drf-yasg = "*"
 django-cors-headers = "*"
 django = "*"
 django-filter = "*"
+pillow = "*"
 
 [dev-packages]
 

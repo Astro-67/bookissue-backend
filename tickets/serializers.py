@@ -15,7 +15,7 @@ class TicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ticket
         fields = [
-            'id', 'title', 'description', 'status',
+            'id', 'title', 'description', 'screenshot', 'status',
             'created_by', 'assigned_to', 'assigned_to_id',
             'created_at', 'updated_at', 'comments_count'
         ]
@@ -84,7 +84,7 @@ class TicketCreateSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Ticket
-        fields = ['title', 'description']
+        fields = ['title', 'description', 'screenshot']
 
     def validate_title(self, value):
         if len(value.strip()) < 3:
@@ -95,6 +95,30 @@ class TicketCreateSerializer(serializers.ModelSerializer):
         if len(value.strip()) < 10:
             raise serializers.ValidationError("Description must be at least 10 characters long.")
         return value.strip()
+
+    def validate_screenshot(self, value):
+        """Validate screenshot file if provided"""
+        if value is None:
+            return value
+            
+        # Check if it's a list (which would be wrong)
+        if isinstance(value, list):
+            raise serializers.ValidationError("Screenshot should be a single file, not a list.")
+        
+        # Check if it's actually a file
+        if not hasattr(value, 'read'):
+            raise serializers.ValidationError("Invalid file format.")
+            
+        # Check file size (5MB limit)
+        if value.size > 5 * 1024 * 1024:
+            raise serializers.ValidationError("File size cannot exceed 5MB.")
+        
+        # Check file type
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if value.content_type not in allowed_types:
+            raise serializers.ValidationError("Only JPEG, PNG, GIF, and WebP images are allowed.")
+        
+        return value
 
 
 class TicketListSerializer(serializers.ModelSerializer):

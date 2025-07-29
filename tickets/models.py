@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+import os
 
 
 class Ticket(models.Model):
@@ -14,6 +15,12 @@ class Ticket(models.Model):
 
     title = models.CharField(max_length=200)
     description = models.TextField()
+    screenshot = models.ImageField(
+        upload_to='ticket_screenshots/',
+        null=True,
+        blank=True,
+        help_text='Screenshot image of the problem (optional)'
+    )
     status = models.CharField(
         max_length=20, 
         choices=STATUS_CHOICES, 
