@@ -116,3 +116,20 @@ class ChangePasswordSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError("Old password is incorrect")
         return value
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating user information (for admins)
+    """
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name', 'role', 'phone_number', 
+                 'student_id', 'department', 'is_active']
+        
+    def validate_email(self, value):
+        # Check if email is already in use by another user
+        user = self.instance
+        if user and User.objects.filter(email=value).exclude(id=user.id).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        return value

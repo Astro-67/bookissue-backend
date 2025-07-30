@@ -19,6 +19,7 @@ urlpatterns = [
     
     # User management endpoints (for staff and ICT)
     path('', views.UserListView.as_view(), name='user_list'),
+    path('create/', views.UserCreateView.as_view(), name='user_create'),
     path('<int:id>/', views.UserDetailView.as_view(), name='user_detail'),
     path('stats/', views.get_user_stats, name='user_stats'),
 ]

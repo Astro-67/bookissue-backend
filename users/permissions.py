@@ -63,12 +63,12 @@ class CanAssignTickets(permissions.BasePermission):
 
 class IsStaffOrICT(permissions.BasePermission):
     """
-    Custom permission to allow staff and ICT users.
+    Custom permission to allow staff, ICT, and super admin users.
     """
 
     def has_permission(self, request, view):
         return (request.user.is_authenticated and 
-                (request.user.is_staff_member() or request.user.is_ict()))
+                (request.user.is_staff_member() or request.user.is_ict() or request.user.is_super_admin()))
 
 
 class IsOwnerOrStaffOrICT(permissions.BasePermission):

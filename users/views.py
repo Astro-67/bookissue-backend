@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ValidationError
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -14,6 +15,7 @@ from .serializers import (
     UserLoginSerializer,
     UserProfileSerializer,
     UserListSerializer,
+    UserUpdateSerializer,
     ChangePasswordSerializer
 )
 from .permissions import IsOwnerOrReadOnly, IsStaffOrICT, CanManageTickets
@@ -191,14 +193,34 @@ class UserListView(generics.ListAPIView):
         return queryset
 
 
-class UserDetailView(generics.RetrieveAPIView):
+class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
-    Get user details (for staff and ICT)
+    Get, update, or delete user details (for staff, ICT, and super admins)
     """
     queryset = User.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated, IsStaffOrICT]
     lookup_field = 'id'
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return UserUpdateSerializer
+        return UserProfileSerializer
+
+    def perform_destroy(self, instance):
+        # Prevent super admins from deleting themselves
+        if instance == self.request.user:
+            raise ValidationError("You cannot delete your own account.")
+        instance.delete()
+
+
+class UserCreateView(generics.CreateAPIView):
+    """
+    Create a new user (for super admins)
+    """
+    queryset = User.objects.all()
+    serializer_class = UserRegistrationSerializer
+    permission_classes = [permissions.IsAuthenticated, IsStaffOrICT]
 
 
 @api_view(['GET'])
