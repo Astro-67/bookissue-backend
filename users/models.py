@@ -10,10 +10,11 @@ class User(AbstractUser):
         ('student', 'Student'),
         ('staff', 'Staff'),
         ('ict', 'ICT'),
+        ('super_admin', 'Super Admin'),
     ]
     
     email = models.EmailField(unique=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
+    role = models.CharField(max_length=15, choices=ROLE_CHOICES, default='student')
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
@@ -51,10 +52,25 @@ class User(AbstractUser):
     def is_ict(self):
         return self.role == 'ict'
 
+    def is_super_admin(self):
+        return self.role == 'super_admin'
+
     def can_manage_tickets(self):
-        """Check if user can manage tickets (staff and ICT)"""
-        return self.role in ['staff', 'ict']
+        """Check if user can manage tickets (staff, ICT, and super admin)"""
+        return self.role in ['staff', 'ict', 'super_admin']
 
     def can_assign_tickets(self):
-        """Check if user can assign tickets (ICT only)"""
-        return self.role == 'ict'
+        """Check if user can assign tickets (ICT and super admin)"""
+        return self.role in ['ict', 'super_admin']
+
+    def can_manage_users(self):
+        """Check if user can manage other users (super admin only)"""
+        return self.role == 'super_admin'
+
+    def can_view_all_tickets(self):
+        """Check if user can view all tickets regardless of assignment"""
+        return self.role in ['ict', 'super_admin']
+
+    def can_delete_tickets(self):
+        """Check if user can delete tickets (super admin only)"""
+        return self.role == 'super_admin'
