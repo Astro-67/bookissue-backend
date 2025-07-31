@@ -107,11 +107,13 @@ class UserListSerializer(serializers.ModelSerializer):
     Serializer for listing users (minimal info)
     """
     full_name = serializers.ReadOnlyField()
+    profile_picture_url = serializers.ReadOnlyField()
 
     class Meta:
         model = User
         fields = (
-            'id', 'email', 'full_name', 'role', 'department',
+            'id', 'email', 'username', 'first_name', 'last_name', 'full_name', 
+            'role', 'department', 'profile_picture', 'profile_picture_url',
             'is_active', 'created_at'
         )
 
