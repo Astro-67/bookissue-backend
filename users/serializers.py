@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+import os
 from .models import User
 
 
@@ -73,15 +74,32 @@ class UserProfileSerializer(serializers.ModelSerializer):
     Serializer for user profile (read/update)
     """
     full_name = serializers.ReadOnlyField()
+    profile_picture_url = serializers.ReadOnlyField()
 
     class Meta:
         model = User
         fields = (
             'id', 'email', 'username', 'first_name', 'last_name',
             'full_name', 'role', 'phone_number', 'student_id',
-            'department', 'is_active', 'created_at', 'updated_at'
+            'department', 'profile_picture', 'profile_picture_url',
+            'is_active', 'created_at', 'updated_at'
         )
         read_only_fields = ('id', 'email', 'role', 'created_at', 'updated_at')
+
+    def validate_profile_picture(self, value):
+        """Validate profile picture upload"""
+        if value:
+            # Check file size (5MB limit)
+            if value.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError("Profile picture size cannot exceed 5MB.")
+            
+            # Check file type
+            valid_extensions = ['.jpg', '.jpeg', '.png']
+            ext = os.path.splitext(value.name)[1].lower()
+            if ext not in valid_extensions:
+                raise serializers.ValidationError("Only JPG, JPEG, and PNG files are allowed.")
+        
+        return value
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -115,6 +133,30 @@ class ChangePasswordSerializer(serializers.Serializer):
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("Old password is incorrect")
+        return value
+
+
+class ProfilePictureUploadSerializer(serializers.ModelSerializer):
+    """
+    Serializer specifically for profile picture upload
+    """
+    class Meta:
+        model = User
+        fields = ('profile_picture',)
+
+    def validate_profile_picture(self, value):
+        """Validate profile picture upload"""
+        if value:
+            # Check file size (5MB limit)
+            if value.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError("Profile picture size cannot exceed 5MB.")
+            
+            # Check file type
+            valid_extensions = ['.jpg', '.jpeg', '.png']
+            ext = os.path.splitext(value.name)[1].lower()
+            if ext not in valid_extensions:
+                raise serializers.ValidationError("Only JPG, JPEG, and PNG files are allowed.")
+        
         return value
 
 

@@ -1,4 +1,4 @@
-from rest_framework import generics, status, permissions, filters
+from rest_framework import generics, status, permissions, filters, parsers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,7 +16,8 @@ from .serializers import (
     UserProfileSerializer,
     UserListSerializer,
     UserUpdateSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer,
+    ProfilePictureUploadSerializer
 )
 from .permissions import IsOwnerOrReadOnly, IsStaffOrICT, CanManageTickets
 
@@ -152,6 +153,21 @@ class ChangePasswordView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @swagger_auto_schema(
+        operation_description="Change user password",
+        request_body=ChangePasswordSerializer,
+        responses={
+            200: openapi.Response(
+                description="Password changed successfully",
+                examples={
+                    "application/json": {
+                        "message": "Password changed successfully"
+                    }
+                }
+            ),
+            400: "Bad Request - Invalid old password or new password validation failed"
+        }
+    )
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         
@@ -163,6 +179,82 @@ class ChangePasswordView(APIView):
         user.save()
         
         return Response({'message': 'Password changed successfully'}, status=status.HTTP_200_OK)
+
+
+class ProfilePictureUploadView(APIView):
+    """
+    Upload or update user profile picture
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    @swagger_auto_schema(
+        operation_description="Upload or update profile picture",
+        manual_parameters=[
+            openapi.Parameter(
+                'profile_picture',
+                openapi.IN_FORM,
+                description="Profile picture file (JPG/PNG, max 5MB)",
+                type=openapi.TYPE_FILE,
+                required=True
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Profile picture uploaded successfully",
+                examples={
+                    "application/json": {
+                        "message": "Profile picture uploaded successfully",
+                        "profile_picture_url": "/media/profile_pictures/profile_1.jpg"
+                    }
+                }
+            ),
+            400: "Bad Request - Invalid file format or size"
+        }
+    )
+    def post(self, request):
+        serializer = ProfilePictureUploadSerializer(
+            instance=request.user,
+            data=request.data,
+            partial=True
+        )
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = serializer.save()
+        
+        return Response({
+            'message': 'Profile picture uploaded successfully',
+            'profile_picture_url': user.profile_picture_url
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        operation_description="Delete profile picture",
+        responses={
+            200: openapi.Response(
+                description="Profile picture deleted successfully",
+                examples={
+                    "application/json": {
+                        "message": "Profile picture deleted successfully"
+                    }
+                }
+            )
+        }
+    )
+    def delete(self, request):
+        user = request.user
+        if user.profile_picture:
+            user.delete_old_profile_picture()
+            user.profile_picture = None
+            user.save()
+            return Response({
+                'message': 'Profile picture deleted successfully'
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'message': 'No profile picture to delete'
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserListView(generics.ListAPIView):

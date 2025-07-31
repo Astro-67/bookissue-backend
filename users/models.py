@@ -1,5 +1,15 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import os
+
+
+def user_profile_picture_path(instance, filename):
+    """Generate upload path for user profile pictures"""
+    # Get file extension
+    ext = filename.split('.')[-1]
+    # Create filename using user ID
+    filename = f'profile_{instance.id}.{ext}'
+    return os.path.join('profile_pictures', filename)
 
 
 class User(AbstractUser):
@@ -20,6 +30,12 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     student_id = models.CharField(max_length=20, blank=True, null=True, unique=True)
     department = models.CharField(max_length=100, blank=True, null=True)
+    profile_picture = models.ImageField(
+        upload_to=user_profile_picture_path,
+        blank=True,
+        null=True,
+        help_text="Upload a profile picture (max 5MB, JPG/PNG)"
+    )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -38,6 +54,30 @@ class User(AbstractUser):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def profile_picture_url(self):
+        """Get the full URL for the profile picture"""
+        if self.profile_picture:
+            return self.profile_picture.url
+        return None
+
+    def delete_old_profile_picture(self):
+        """Delete the old profile picture file when updating"""
+        if self.profile_picture:
+            if os.path.isfile(self.profile_picture.path):
+                os.remove(self.profile_picture.path)
+
+    def save(self, *args, **kwargs):
+        # If this is an update and profile picture is being changed
+        if self.pk:
+            try:
+                old_user = User.objects.get(pk=self.pk)
+                if old_user.profile_picture and old_user.profile_picture != self.profile_picture:
+                    old_user.delete_old_profile_picture()
+            except User.DoesNotExist:
+                pass
+        super().save(*args, **kwargs)
 
     def has_role(self, role):
         """Check if user has a specific role"""
