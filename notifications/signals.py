@@ -23,8 +23,8 @@ def create_ticket_notifications(sender, instance, created, **kwargs):
             Notification.create_notification(
                 user=ict_user,
                 title=f"New Ticket #{instance.id}",
-                message=f"New ticket has been submitted by {instance.created_by.get_full_name()}.",
-                notification_type='assignment',
+                message=f"New ticket '{instance.title}' has been submitted by {instance.created_by.get_full_name()}.",
+                notification_type='new_ticket',
                 ticket_id=instance.id
             )
         
@@ -34,8 +34,8 @@ def create_ticket_notifications(sender, instance, created, **kwargs):
             Notification.create_notification(
                 user=super_admin,
                 title=f"New Ticket #{instance.id}",
-                message=f"New ticket has been submitted by {instance.created_by.get_full_name()}.",
-                notification_type='assignment',
+                message=f"New ticket '{instance.title}' has been submitted by {instance.created_by.get_full_name()}.",
+                notification_type='new_ticket',
                 ticket_id=instance.id
             )
     else:

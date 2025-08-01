@@ -10,6 +10,7 @@ class Notification(models.Model):
         ('ticket_status', 'Ticket Status Change'),
         ('new_comment', 'New Comment'),
         ('assignment', 'Ticket Assigned'),
+        ('new_ticket', 'New Ticket Created'),
         ('general', 'General'),
     ]
 
