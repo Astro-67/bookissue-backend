@@ -57,7 +57,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         Get count of unread notifications for the current user
         """
         count = self.get_queryset().filter(is_read=False).count()
-        return Response({'unread_count': count})
+        return Response({'count': count})
 
     @swagger_auto_schema(
         operation_description="Mark notifications as read",

@@ -27,6 +27,17 @@ def create_ticket_notifications(sender, instance, created, **kwargs):
                 notification_type='assignment',
                 ticket_id=instance.id
             )
+        
+        # Also notify super admin about new ticket
+        super_admins = User.objects.filter(role='super_admin')
+        for super_admin in super_admins:
+            Notification.create_notification(
+                user=super_admin,
+                title=f"New Ticket #{instance.id}",
+                message=f"New ticket has been submitted by {instance.created_by.get_full_name()}.",
+                notification_type='assignment',
+                ticket_id=instance.id
+            )
     else:
         # Check if status changed
         try:

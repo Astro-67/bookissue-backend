@@ -7,10 +7,9 @@ class Notification(models.Model):
     Notification model for user notifications
     """
     NOTIFICATION_TYPES = [
-        ('ticket_status_change', 'Ticket Status Change'),
+        ('ticket_status', 'Ticket Status Change'),
         ('new_comment', 'New Comment'),
-        ('ticket_assigned', 'Ticket Assigned'),
-        ('ticket_created', 'Ticket Created'),
+        ('assignment', 'Ticket Assigned'),
         ('general', 'General'),
     ]
 
