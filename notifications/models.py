@@ -57,69 +57,69 @@ class Notification(models.Model):
         )
 
     @classmethod
-    def create_ticket_status_notification(cls, ticket, old_status, new_status):
+    def create_ticket_status_notification(cls, user, ticket, old_status, new_status):
         """
         Create notification when ticket status changes
         """
-        # Notify ticket creator
-        if ticket.created_by:
-            cls.create_notification(
-                user=ticket.created_by,
-                title=f"Ticket #{ticket.id} Status Updated",
-                message=f"Your ticket '{ticket.title}' status changed from '{old_status}' to '{new_status}'",
-                notification_type='ticket_status_change',
-                ticket_id=ticket.id
-            )
+        status_map = {
+            'OPEN': 'Open',
+            'IN_PROGRESS': 'In Progress', 
+            'RESOLVED': 'Resolved'
+        }
         
-        # Notify assigned ICT staff if different from creator
-        if ticket.assigned_to and ticket.assigned_to != ticket.created_by:
-            cls.create_notification(
-                user=ticket.assigned_to,
-                title=f"Assigned Ticket #{ticket.id} Status Updated",
-                message=f"Ticket '{ticket.title}' status changed from '{old_status}' to '{new_status}'",
-                notification_type='ticket_status_change',
-                ticket_id=ticket.id
-            )
+        old_status_display = status_map.get(old_status, old_status)
+        new_status_display = status_map.get(new_status, new_status)
+        
+        if new_status == 'RESOLVED':
+            title = f"Ticket #{ticket.id} Resolved"
+            message = f"Your ticket '{ticket.title}' has been resolved."
+        elif new_status == 'IN_PROGRESS':
+            title = f"Ticket #{ticket.id} In Progress"
+            message = f"Your ticket '{ticket.title}' is now being worked on."
+        else:
+            title = f"Ticket #{ticket.id} Status Updated"
+            message = f"Your ticket '{ticket.title}' status changed to {new_status_display}."
+            
+        return cls.create_notification(
+            user=user,
+            title=title,
+            message=message,
+            notification_type='ticket_status',
+            ticket_id=ticket.id
+        )
 
     @classmethod
-    def create_comment_notification(cls, comment, ticket):
+    def create_comment_notification(cls, user, comment, commenter):
         """
         Create notification when new comment is added
         """
-        # Notify ticket creator if they didn't create the comment
-        if ticket.created_by and ticket.created_by != comment.created_by:
-            cls.create_notification(
-                user=ticket.created_by,
-                title=f"New Comment on Ticket #{ticket.id}",
-                message=f"New comment added to your ticket '{ticket.title}' by {comment.created_by.full_name}",
-                notification_type='new_comment',
-                ticket_id=ticket.id,
-                comment_id=comment.id
-            )
+        ticket = comment.ticket
         
-        # Notify assigned ICT staff if they didn't create the comment and are different from ticket creator
-        if (ticket.assigned_to and 
-            ticket.assigned_to != comment.created_by and 
-            ticket.assigned_to != ticket.created_by):
-            cls.create_notification(
-                user=ticket.assigned_to,
-                title=f"New Comment on Assigned Ticket #{ticket.id}",
-                message=f"New comment added to ticket '{ticket.title}' by {comment.created_by.full_name}",
-                notification_type='new_comment',
-                ticket_id=ticket.id,
-                comment_id=comment.id
-            )
+        if commenter.role == 'ict':
+            title = f"ICT Replied to Ticket #{ticket.id}"
+            message = f"ICT has replied to your ticket '{ticket.title}'."
+        else:
+            title = f"New Comment on Ticket #{ticket.id}"
+            message = f"{commenter.get_full_name()} has added a comment to ticket '{ticket.title}'."
+        
+        return cls.create_notification(
+            user=user,
+            title=title,
+            message=message,
+            notification_type='new_comment',
+            ticket_id=ticket.id,
+            comment_id=comment.id
+        )
 
     @classmethod
-    def create_assignment_notification(cls, ticket, assigned_to):
+    def create_assignment_notification(cls, user, ticket, assigned_by):
         """
         Create notification when ticket is assigned to ICT staff
         """
-        if assigned_to:
-            cls.create_notification(
-                user=assigned_to,
-                title=f"New Ticket Assigned #{ticket.id}",
-                message=f"You have been assigned to ticket '{ticket.title}' created by {ticket.created_by.full_name}",
-                notification_type='ticket_assigned',
-                ticket_id=ticket.id
-            )
+        return cls.create_notification(
+            user=user,
+            title=f"Ticket #{ticket.id} Assigned to You",
+            message=f"You have been assigned to ticket '{ticket.title}' created by {ticket.created_by.get_full_name()}.",
+            notification_type='assignment',
+            ticket_id=ticket.id
+        )
