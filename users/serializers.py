@@ -31,13 +31,23 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def validate_student_id(self, value):
-        if value and User.objects.filter(student_id=value).exists():
+        # Convert empty string to None for nullable fields
+        if not value or value.strip() == '':
+            return None
+        if User.objects.filter(student_id=value).exists():
             raise serializers.ValidationError("A user with this student ID already exists.")
         return value
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         password = validated_data.pop('password')
+        
+        # Handle nullable fields - convert empty strings to None
+        nullable_fields = ['phone_number', 'student_id', 'department']
+        for field in nullable_fields:
+            if field in validated_data and (not validated_data[field] or validated_data[field].strip() == ''):
+                validated_data[field] = None
+        
         user = User.objects.create_user(**validated_data)
         user.set_password(password)
         user.save()
@@ -177,3 +187,22 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if user and User.objects.filter(email=value).exclude(id=user.id).exists():
             raise serializers.ValidationError("This email is already in use.")
         return value
+
+    def validate_student_id(self, value):
+        # Convert empty string to None for nullable fields
+        if not value or value.strip() == '':
+            return None
+        # Check if student_id is already in use by another user
+        user = self.instance
+        if user and User.objects.filter(student_id=value).exclude(id=user.id).exists():
+            raise serializers.ValidationError("This student ID is already in use.")
+        return value
+
+    def update(self, instance, validated_data):
+        # Handle nullable fields - convert empty strings to None
+        nullable_fields = ['phone_number', 'student_id', 'department']
+        for field in nullable_fields:
+            if field in validated_data and (not validated_data[field] or validated_data[field].strip() == ''):
+                validated_data[field] = None
+        
+        return super().update(instance, validated_data)
